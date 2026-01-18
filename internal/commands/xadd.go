@@ -128,7 +128,7 @@ func xadd(args *resp.Array, conn *pubsub.Connection) {
 		return
 	}
 
-	existingStream.Insert(streamEntry, []byte(actualIDStr))
+	existingStream.Insert(streamEntry, streamID.InternalKey())
 
 	// Notify blocking listeners
 	for _, listener := range existingStream.BlockingListeners {

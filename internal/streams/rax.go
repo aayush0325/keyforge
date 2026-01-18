@@ -201,61 +201,82 @@ func (r *Rax) Delete(s []byte) bool {
 }
 
 func leftmost(n *RaxNode) *RaxNode {
-	for {
-		if n.IsEndOfEntry {
-			return n
-		}
-		if len(n.Children) == 0 {
-			return nil
-		}
-
-		// pick smallest edge
-		var minKey byte = 255
-		var next *RaxNode
-		for k, c := range n.Children {
-			if k < minKey {
-				minKey = k
-				next = c
-			}
-		}
-		n = next
+	if n == nil {
+		return nil
 	}
+	if n.IsEndOfEntry {
+		return n
+	}
+	if len(n.Children) == 0 {
+		return nil
+	}
+
+	// pick smallest edge
+	var minKey int = 256
+	var next *RaxNode
+	for k, c := range n.Children {
+		if int(k) < minKey {
+			minKey = int(k)
+			next = c
+		}
+	}
+	return leftmost(next)
 }
 
-func (r *Rax) Next(s []byte) *RaxNode {
+func (r *Rax) SeekGE(s []byte) *RaxNode {
 	var stack []TrieEdge
-
 	node := r.Root
 	i := 0
 
-	// Step 1: descend using s
 	for i < len(s) {
 		child, ok := node.Children[s[i]]
 		if !ok {
-			break // s does not fully exist → treat as prefix miss
-		}
-
-		prefixLen := MaxCommonStringLen(s[i:], child.Prefix)
-		if prefixLen != len(child.Prefix) {
+			// No exact match for this character.
+			// Find the first child of 'node' that is > s[i]
+			var minKey int = 256
+			var nextNode *RaxNode
+			for k, c := range node.Children {
+				if int(k) > int(s[i]) && int(k) < minKey {
+					minKey = int(k)
+					nextNode = c
+				}
+			}
+			if nextNode != nil {
+				return leftmost(nextNode)
+			}
+			// No larger child, backtrack
 			break
 		}
 
-		stack = append(stack, TrieEdge{
-			parent: node,
-			node:   child,
-			edge:   s[i],
-		})
+		prefixLen := MaxCommonStringLen(s[i:], child.Prefix)
+		if prefixLen < len(child.Prefix) {
+			// Prefix mismatch.
+			// If the first differing byte in child.Prefix is > s[i+prefixLen], then this child is GE.
+			if i+prefixLen < len(s) && child.Prefix[prefixLen] > s[i+prefixLen] {
+				return leftmost(child)
+			}
+			// Otherwise, this child is smaller than s, so we need a larger sibling of this child.
+			// We'll break and let the backtracking handle it.
+			stack = append(stack, TrieEdge{parent: node, node: child, edge: s[i]})
+			break
+		}
 
+		stack = append(stack, TrieEdge{parent: node, node: child, edge: s[i]})
 		node = child
 		i += prefixLen
 	}
 
-	// Step 2: if exact key & has subtree → next is leftmost child
-	if i == len(s) && node.IsEndOfEntry && len(node.Children) > 0 {
-		return leftmost(node)
+	if i == len(s) {
+		if node.IsEndOfEntry {
+			return node
+		}
+		// Not an entry, find leftmost in subtree
+		if len(node.Children) > 0 {
+			return leftmost(node)
+		}
 	}
 
-	// Step 3: backtrack to find larger sibling
+	// Backtrack to find larger sibling
 	for len(stack) > 0 {
 		top := stack[len(stack)-1]
 		stack = stack[:len(stack)-1]
@@ -263,12 +284,12 @@ func (r *Rax) Next(s []byte) *RaxNode {
 		parent := top.parent
 		currEdge := top.edge
 
-		var nextKey byte = 255
+		var minKey int = 256
 		var nextNode *RaxNode
 
 		for k, c := range parent.Children {
-			if k > currEdge && k < nextKey {
-				nextKey = k
+			if int(k) > int(currEdge) && int(k) < minKey {
+				minKey = int(k)
 				nextNode = c
 			}
 		}
@@ -278,7 +299,61 @@ func (r *Rax) Next(s []byte) *RaxNode {
 		}
 	}
 
-	// No successor
+	return nil
+}
+
+func (r *Rax) Successor(s []byte) *RaxNode {
+	var stack []TrieEdge
+	node := r.Root
+	i := 0
+
+	// Descend to the node
+	for i < len(s) {
+		child, ok := node.Children[s[i]]
+		if !ok {
+			return nil // Should not happen if s is an existing key
+		}
+		stack = append(stack, TrieEdge{parent: node, node: child, edge: s[i]})
+		node = child
+		i += len(child.Prefix)
+	}
+
+	// If node has children, the successor is the leftmost entry in the children's subtrees
+	if len(node.Children) > 0 {
+		var minKey int = 256
+		var nextNode *RaxNode
+		for k, c := range node.Children {
+			if int(k) < minKey {
+				minKey = int(k)
+				nextNode = c
+			}
+		}
+		return leftmost(nextNode)
+	}
+
+	// Otherwise, backtrack to find a larger sibling
+	for len(stack) > 0 {
+		top := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+
+		parent := top.parent
+		currEdge := top.edge
+
+		var minKey int = 256
+		var nextNode *RaxNode
+
+		for k, c := range parent.Children {
+			if int(k) > int(currEdge) && int(k) < minKey {
+				minKey = int(k)
+				nextNode = c
+			}
+		}
+
+		if nextNode != nil {
+			return leftmost(nextNode)
+		}
+	}
+
 	return nil
 }
 

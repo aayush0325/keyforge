@@ -121,17 +121,16 @@ func newRaxNode(isEnd bool, prefix []byte, entry *StreamEntry) *RaxNode {
 	}
 }
 
-func newRadixTrie(prefix []byte, entry *StreamEntry) *Rax {
+func NewRadixTrie(prefix []byte, entry *StreamEntry) *Rax {
 	return &Rax{
 		Root: newRaxNode(true, prefix, entry),
 	}
 }
 
 func NewStream(entry *StreamEntry) *Stream {
-	return &Stream{
-		LastEntry: entry,
-		Radix:     newRadixTrie([]byte(entry.ID.String()), entry),
-	}
+	s := NewEmptyStream()
+	s.Insert(entry, entry.ID.InternalKey())
+	return s
 }
 
 func NewEmptyStream() *Stream {

@@ -1,6 +1,9 @@
 package streams
 
-import "sync"
+import (
+	"fmt"
+	"sync"
+)
 
 type StreamEntry struct {
 	ID    *StreamID
@@ -33,6 +36,11 @@ func (sid *StreamID) Compare(other *StreamID) int {
 	return 0
 }
 
+// InternalKey returns a zero-padded string representation for lexicographical ordering in the trie
+func (sid *StreamID) InternalKey() []byte {
+	return []byte(fmt.Sprintf("%020d-%020d", sid.Ms, sid.Seq))
+}
+
 // IsZero returns true if the StreamID is 0-0
 func (sid *StreamID) IsZero() bool {
 	return sid.Ms == 0 && sid.Seq == 0
@@ -58,35 +66,17 @@ func (s *Stream) Insert(se *StreamEntry, prefix []byte) {
 func (s *Stream) Range(start, end *StreamID) []*StreamEntry {
 	var result []*StreamEntry
 
-	// Collect all entries using DFS, iterating children in sorted byte order
-	var collectAll func(node *RaxNode)
-	collectAll = func(node *RaxNode) {
-		if node == nil {
-			return
+	startKey := start.InternalKey()
+	node := s.Radix.SeekGE(startKey)
+	for node != nil {
+		// Check if the entry is within the range
+		if node.Entry.ID.Compare(end) > 0 {
+			break
 		}
-		if node.IsEndOfEntry && node.Entry != nil {
-			// Check if the entry is within the range
-			if node.Entry.ID.Compare(start) >= 0 && node.Entry.ID.Compare(end) <= 0 {
-				result = append(result, node.Entry)
-			}
-		}
-		// Iterate children in sorted byte order (0-255)
-		for i := 0; i <= 255; i++ {
-			if child, exists := node.Children[byte(i)]; exists {
-				collectAll(child)
-			}
-		}
-	}
+		result = append(result, node.Entry)
 
-	collectAll(s.Radix.Root)
-
-	// Sort by ID (since different branches may have mixed ordering)
-	for i := 0; i < len(result); i++ {
-		for j := i + 1; j < len(result); j++ {
-			if result[i].ID.Compare(result[j].ID) > 0 {
-				result[i], result[j] = result[j], result[i]
-			}
-		}
+		// Get next entry
+		node = s.Radix.Successor(node.Entry.ID.InternalKey())
 	}
 
 	return result
