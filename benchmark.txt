@@ -1,0 +1,1 @@
+redis-benchmark -c 50 -n 100000 -t get,set
