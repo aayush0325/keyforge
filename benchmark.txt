@@ -1,1 +1,4 @@
 redis-benchmark -c 50 -n 100000 -t get,set
+
+
+go tool pprof -http=:8080 http://localhost:6060/debug/pprof/profile?seconds=30
