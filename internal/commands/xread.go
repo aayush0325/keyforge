@@ -177,13 +177,6 @@ func xread(args *resp.Array, conn *pubsub.Connection) {
 		key := keys[i]
 		startID := ids[i]
 
-		// Ensure stream exists or create it?
-		// Redis XREAD BLOCK creates empty streams if they don't exist?
-		// Actually, XREAD BLOCK waits on keys. If key doesn't exist, it waits for it to be created.
-		// So we need to put a listener on the key in Global.KV.
-		// But our Global.KV is a map. If the key is missing, we can't attach a listener to the Stream struct.
-		// We might need to create an empty Stream struct if it doesn't exist.
-
 		stream, exists := streams.Global.KV[key]
 		if !exists {
 			stream = streams.NewEmptyStream()
@@ -217,9 +210,6 @@ func xread(args *resp.Array, conn *pubsub.Connection) {
 		timer := time.NewTimer(time.Duration(blockMs) * time.Millisecond)
 		defer timer.Stop()
 		timeoutCh = timer.C
-	} else {
-		// blockMs = 0 means block indefinitely
-		// We can use a nil channel which blocks forever in select
 	}
 
 	cases[len(channels)] = reflect.SelectCase{
@@ -227,9 +217,6 @@ func xread(args *resp.Array, conn *pubsub.Connection) {
 		Chan: reflect.ValueOf(timeoutCh),
 	}
 	if blockMs == 0 {
-		// If 0, we don't want a timeout case that fires immediately (nil chan blocks, but let's be explicit)
-		// reflect.Select with nil chan blocks forever.
-		// But wait, if timeoutCh is nil, SelectRecv on it will block forever. Correct.
 	}
 
 	chosen, _, _ := reflect.Select(cases)
@@ -239,9 +226,6 @@ func xread(args *resp.Array, conn *pubsub.Connection) {
 	for i := 0; i < numStreams; i++ {
 		key := keys[i]
 		if stream, exists := streams.Global.KV[key]; exists {
-			// Remove listener
-			// We need to find our listener and remove it.
-			// Since we have the pointer, we can filter.
 			newListeners := make([]*streams.BlockingListener, 0, len(stream.BlockingListeners))
 			for _, l := range stream.BlockingListeners {
 				if l != listeners[i] {
@@ -264,10 +248,6 @@ func xread(args *resp.Array, conn *pubsub.Connection) {
 	streams.Global.Mu.Unlock()
 
 	if len(data) == 0 {
-		// Should not happen if signaled correctly, but possible race?
-		// If race, maybe we should return null or try again?
-		// Redis behavior: if signaled, it returns data.
-		// If we woke up but data is gone (unlikely with append-only streams), return null.
 		conn.W.Write([]byte("*-1\r\n"))
 	} else {
 		finalResponse := &resp.Array{Val: data}
