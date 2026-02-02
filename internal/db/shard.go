@@ -7,6 +7,7 @@ const (
 
 // shardForKey returns the shard index for a given key using FNV-1a hash
 // Uses zero-allocation string iteration for performance
+// https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
 func shardForKey(key string) int {
 	const (
 		offset32 = 2166136261
