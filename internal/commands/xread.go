@@ -28,19 +28,19 @@ func xread(args *resp.Array, conn *pubsub.Connection) {
 			if argStr == "block" {
 				if i+1 >= len(args.Val) {
 					msg := resp.SimpleError{Val: []byte("ERR syntax error")}
-					conn.W.Write(msg.ToBytes())
+					conn.Write(&msg)
 					return
 				}
 				blockArg, ok := args.Val[i+1].(*resp.BulkString)
 				if !ok {
 					msg := resp.SimpleError{Val: []byte("ERR syntax error")}
-					conn.W.Write(msg.ToBytes())
+					conn.Write(&msg)
 					return
 				}
 				parsedBlockMs, err := strconv.ParseInt(string(blockArg.Str), 10, 64)
 				if err != nil {
 					msg := resp.SimpleError{Val: []byte("ERR value is not an integer or out of range")}
-					conn.W.Write(msg.ToBytes())
+					conn.Write(&msg)
 					return
 				}
 				blockMs = parsedBlockMs
@@ -51,14 +51,14 @@ func xread(args *resp.Array, conn *pubsub.Connection) {
 
 	if streamsIdx == -1 || streamsIdx+1 >= len(args.Val) {
 		msg := resp.SimpleError{Val: []byte("ERR syntax error")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
 	numStreams := (len(args.Val) - (streamsIdx + 1)) / 2
 	if (len(args.Val)-(streamsIdx+1))%2 != 0 {
 		msg := resp.SimpleError{Val: []byte("ERR syntax error")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -69,7 +69,7 @@ func xread(args *resp.Array, conn *pubsub.Connection) {
 		keyBS, ok := args.Val[streamsIdx+1+i].(*resp.BulkString)
 		if !ok {
 			msg := resp.SimpleError{Val: []byte("ERR syntax error")}
-			conn.W.Write(msg.ToBytes())
+			conn.Write(&msg)
 			return
 		}
 		keys[i] = string(keyBS.Str)
@@ -80,7 +80,7 @@ func xread(args *resp.Array, conn *pubsub.Connection) {
 		idBS, ok := args.Val[streamsIdx+1+numStreams+i].(*resp.BulkString)
 		if !ok {
 			msg := resp.SimpleError{Val: []byte("ERR syntax error")}
-			conn.W.Write(msg.ToBytes())
+			conn.Write(&msg)
 			return
 		}
 		rawIDs[i] = string(idBS.Str)
@@ -102,7 +102,7 @@ func xread(args *resp.Array, conn *pubsub.Connection) {
 			if err != nil {
 				streams.Global.Mu.Unlock()
 				msg := resp.SimpleError{Val: []byte("ERR Invalid stream ID")}
-				conn.W.Write(msg.ToBytes())
+				conn.Write(&msg)
 				return
 			}
 			ids[i] = id
@@ -160,10 +160,10 @@ func xread(args *resp.Array, conn *pubsub.Connection) {
 	if len(data) > 0 || blockMs == -1 {
 		streams.Global.Mu.Unlock()
 		if len(data) == 0 {
-			conn.W.Write([]byte("*-1\r\n"))
+			conn.Write(&resp.Array{Val: nil})
 		} else {
 			finalResponse := &resp.Array{Val: data}
-			conn.W.Write(finalResponse.ToBytes())
+			conn.Write(finalResponse)
 		}
 		return
 	}
@@ -239,7 +239,7 @@ func xread(args *resp.Array, conn *pubsub.Connection) {
 	if chosen == len(channels) {
 		// Timeout
 		streams.Global.Mu.Unlock()
-		conn.W.Write([]byte("*-1\r\n"))
+		conn.Write(&resp.Array{Val: nil})
 		return
 	}
 
@@ -248,9 +248,9 @@ func xread(args *resp.Array, conn *pubsub.Connection) {
 	streams.Global.Mu.Unlock()
 
 	if len(data) == 0 {
-		conn.W.Write([]byte("*-1\r\n"))
+		conn.Write(&resp.Array{Val: nil})
 	} else {
 		finalResponse := &resp.Array{Val: data}
-		conn.W.Write(finalResponse.ToBytes())
+		conn.Write(finalResponse)
 	}
 }

@@ -7,5 +7,5 @@ import (
 
 func commandDoesntExist(_ *resp.Array, conn *pubsub.Connection) {
 	err := resp.SimpleError{Val: ([]byte)("This command doesn't exist in the server")}
-	conn.W.Write(err.ToBytes())
+	conn.Write(&err)
 }

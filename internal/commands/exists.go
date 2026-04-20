@@ -11,7 +11,7 @@ func exists(args *resp.Array, conn *pubsub.Connection) {
 		msg := resp.SimpleError{
 			Val: []byte("wrong number of arguments for 'exists' command"),
 		}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -24,7 +24,7 @@ func exists(args *resp.Array, conn *pubsub.Connection) {
 			msg := resp.SimpleError{
 				Val: []byte("wrong data type for argument of 'exists' command"),
 			}
-			conn.W.Write(msg.ToBytes())
+			conn.Write(&msg)
 			return
 		}
 
@@ -54,5 +54,5 @@ func exists(args *resp.Array, conn *pubsub.Connection) {
 	}
 
 	res := resp.Integer{Val: existsCount}
-	conn.W.Write(res.ToBytes())
+	conn.Write(&res)
 }

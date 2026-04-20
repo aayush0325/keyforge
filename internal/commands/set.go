@@ -11,28 +11,34 @@ import (
 
 func set(args *resp.Array, conn *pubsub.Connection) {
 	if len(args.Val) < 3 {
-		msg := resp.SimpleError{
-			Val: []byte("wrong number of arguments for 'set' command"),
+		if conn != nil {
+			msg := resp.SimpleError{
+				Val: []byte("wrong number of arguments for 'set' command"),
+			}
+			conn.Write(&msg)
 		}
-		conn.W.Write(msg.ToBytes())
 		return
 	}
 
 	key, ok := args.Val[1].(*resp.BulkString)
 	if !ok {
-		msg := resp.SimpleError{
-			Val: []byte("wrong data type for the 2nd argument of 'set' command"),
+		if conn != nil {
+			msg := resp.SimpleError{
+				Val: []byte("wrong data type for the 2nd argument of 'set' command"),
+			}
+			conn.Write(&msg)
 		}
-		conn.W.Write(msg.ToBytes())
 		return
 	}
 
 	val, ok := args.Val[2].(*resp.BulkString)
 	if !ok {
-		msg := resp.SimpleError{
-			Val: []byte("wrong data type for the 3rd argument of 'set' command"),
+		if conn != nil {
+			msg := resp.SimpleError{
+				Val: []byte("wrong data type for the 3rd argument of 'set' command"),
+			}
+			conn.Write(&msg)
 		}
-		conn.W.Write(msg.ToBytes())
 		return
 	}
 
@@ -45,10 +51,12 @@ func set(args *resp.Array, conn *pubsub.Connection) {
 	for i < len(args.Val) {
 		opt, ok := args.Val[i].(*resp.BulkString)
 		if !ok {
-			msg := resp.SimpleError{
-				Val: []byte("wrong data type for argument"),
+			if conn != nil {
+				msg := resp.SimpleError{
+					Val: []byte("wrong data type for argument"),
+				}
+				conn.Write(&msg)
 			}
-			conn.W.Write(msg.ToBytes())
 			return
 		}
 
@@ -60,28 +68,34 @@ func set(args *resp.Array, conn *pubsub.Connection) {
 			i++
 		case "ex", "px":
 			if i+1 >= len(args.Val) {
-				msg := resp.SimpleError{
-					Val: []byte("syntax error"),
+				if conn != nil {
+					msg := resp.SimpleError{
+						Val: []byte("syntax error"),
+					}
+					conn.Write(&msg)
 				}
-				conn.W.Write(msg.ToBytes())
 				return
 			}
 
 			ttlArg, ok := args.Val[i+1].(*resp.BulkString)
 			if !ok {
-				msg := resp.SimpleError{
-					Val: []byte("wrong data type for TTL argument"),
+				if conn != nil {
+					msg := resp.SimpleError{
+						Val: []byte("wrong data type for TTL argument"),
+					}
+					conn.Write(&msg)
 				}
-				conn.W.Write(msg.ToBytes())
 				return
 			}
 
 			parsedTTL, err := strconv.ParseInt(string(ttlArg.Str), 10, 64)
 			if err != nil {
-				msg := resp.SimpleError{
-					Val: []byte("value is not an integer or out of range"),
+				if conn != nil {
+					msg := resp.SimpleError{
+						Val: []byte("value is not an integer or out of range"),
+					}
+					conn.Write(&msg)
 				}
-				conn.W.Write(msg.ToBytes())
 				return
 			}
 
@@ -92,10 +106,12 @@ func set(args *resp.Array, conn *pubsub.Connection) {
 			}
 			i += 2
 		default:
-			msg := resp.SimpleError{
-				Val: []byte("syntax error"),
+			if conn != nil {
+				msg := resp.SimpleError{
+					Val: []byte("syntax error"),
+				}
+				conn.Write(&msg)
 			}
-			conn.W.Write(msg.ToBytes())
 			return
 		}
 	}
@@ -109,7 +125,9 @@ func set(args *resp.Array, conn *pubsub.Connection) {
 
 	result, ok := <-channel
 	if ok {
-		conn.W.Write(result)
+		if conn != nil {
+			conn.Write(resp.RawMessage(result))
+		}
 		close(channel)
 	}
 }
@@ -118,28 +136,34 @@ func set(args *resp.Array, conn *pubsub.Connection) {
 // Returns 1 if key was set, 0 if key already exists
 func setnx(args *resp.Array, conn *pubsub.Connection) {
 	if len(args.Val) != 3 {
-		msg := resp.SimpleError{
-			Val: []byte("wrong number of arguments for 'setnx' command"),
+		if conn != nil {
+			msg := resp.SimpleError{
+				Val: []byte("wrong number of arguments for 'setnx' command"),
+			}
+			conn.Write(&msg)
 		}
-		conn.W.Write(msg.ToBytes())
 		return
 	}
 
 	key, ok := args.Val[1].(*resp.BulkString)
 	if !ok {
-		msg := resp.SimpleError{
-			Val: []byte("wrong data type for the 2nd argument of 'setnx' command"),
+		if conn != nil {
+			msg := resp.SimpleError{
+				Val: []byte("wrong data type for the 2nd argument of 'setnx' command"),
+			}
+			conn.Write(&msg)
 		}
-		conn.W.Write(msg.ToBytes())
 		return
 	}
 
 	val, ok := args.Val[2].(*resp.BulkString)
 	if !ok {
-		msg := resp.SimpleError{
-			Val: []byte("wrong data type for the 3rd argument of 'setnx' command"),
+		if conn != nil {
+			msg := resp.SimpleError{
+				Val: []byte("wrong data type for the 3rd argument of 'setnx' command"),
+			}
+			conn.Write(&msg)
 		}
-		conn.W.Write(msg.ToBytes())
 		return
 	}
 
@@ -152,13 +176,15 @@ func setnx(args *resp.Array, conn *pubsub.Connection) {
 
 	result, ok := <-channel
 	if ok {
-		// Convert SET NX response to SETNX response
-		// SET NX returns OK if set, nil if not set
-		// SETNX returns 1 if set, 0 if not set
-		if len(result) >= 3 && result[0] == '+' { // +OK\r\n
-			conn.W.Write([]byte(":1\r\n"))
-		} else { // $-1\r\n (nil)
-			conn.W.Write([]byte(":0\r\n"))
+		if conn != nil {
+			// Convert SET NX response to SETNX response
+			// SET NX returns OK if set, nil if not set
+			// SETNX returns 1 if set, 0 if not set
+			if len(result) >= 3 && result[0] == '+' { // +OK\r\n
+				conn.Write(&resp.Integer{Val: 1})
+			} else { // $-1\r\n (nil)
+				conn.Write(&resp.Integer{Val: 0})
+			}
 		}
 		close(channel)
 	}

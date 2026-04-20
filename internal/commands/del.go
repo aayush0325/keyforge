@@ -8,10 +8,12 @@ import (
 
 func del(args *resp.Array, conn *pubsub.Connection) {
 	if len(args.Val) < 2 {
-		msg := resp.SimpleError{
-			Val: []byte("wrong number of arguments for 'del' command"),
+		if conn != nil {
+			msg := resp.SimpleError{
+				Val: []byte("wrong number of arguments for 'del' command"),
+			}
+			conn.Write(&msg)
 		}
-		conn.W.Write(msg.ToBytes())
 		return
 	}
 
@@ -21,10 +23,12 @@ func del(args *resp.Array, conn *pubsub.Connection) {
 	for i := 1; i < len(args.Val); i++ {
 		key, ok := args.Val[i].(*resp.BulkString)
 		if !ok {
-			msg := resp.SimpleError{
-				Val: []byte("wrong data type for argument of 'del' command"),
+			if conn != nil {
+				msg := resp.SimpleError{
+					Val: []byte("wrong data type for argument of 'del' command"),
+				}
+				conn.Write(&msg)
 			}
-			conn.W.Write(msg.ToBytes())
 			return
 		}
 
@@ -46,6 +50,8 @@ func del(args *resp.Array, conn *pubsub.Connection) {
 		}
 	}
 
-	res := resp.Integer{Val: deletedCount}
-	conn.W.Write(res.ToBytes())
+	if conn != nil {
+		res := resp.Integer{Val: deletedCount}
+		conn.Write(&res)
+	}
 }

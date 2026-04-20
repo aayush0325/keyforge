@@ -2,6 +2,7 @@ package db
 
 import (
 	"log"
+	"strconv"
 	"sync"
 	"time"
 
@@ -47,6 +48,7 @@ const (
 	CLEANUP
 	DEL
 	EXISTS
+	INCR
 )
 
 var (
@@ -90,8 +92,32 @@ func shardLoop(s *Shard) {
 			handleDelCommand(s, cmd)
 		case EXISTS:
 			handleExistsCommand(s, cmd)
+		case INCR:
+			handleIncrCommand(s, cmd)
 		}
 	}
+}
+
+func handleIncrCommand(s *Shard, cmd Command) {
+	val, ok := s.kv[cmd.key]
+	if !ok {
+		val.Value = []byte(strconv.Itoa(1))
+		s.kv[cmd.key] = val
+		cmd.c <- []byte(":1\r\n")
+		return
+	}
+	num, err := strconv.ParseInt(string(val.Value), 10, 64)
+	if err != nil {
+		cmd.c <- []byte("-ERR value is not an integer or out of range\r\n")
+		return
+	}
+
+	res := resp.Integer{Val: num + 1}
+
+	val.Value = []byte(strconv.Itoa(int(num + 1)))
+	s.kv[cmd.key] = val
+
+	cmd.c <- res.ToBytes()
 }
 
 // delete expired keys in a shard

@@ -10,7 +10,7 @@ func subscribe(args *resp.Array, conn *pubsub.Connection) {
 		msg := resp.SimpleError{
 			Val: []byte("wrong number of arguments for 'subscribe' command"),
 		}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 	channels := make([][]byte, 0)
@@ -21,7 +21,7 @@ func subscribe(args *resp.Array, conn *pubsub.Connection) {
 			msg := resp.SimpleError{
 				Val: []byte("wrong data type argument for 'echo' command"),
 			}
-			conn.W.Write(msg.ToBytes())
+			conn.Write(&msg)
 			return
 		}
 		channels = append(channels, channel.Str)
@@ -44,7 +44,7 @@ func subscribe(args *resp.Array, conn *pubsub.Connection) {
 				&resp.Integer{Val: int64(len(conn.Channels))},
 			},
 		}
-		conn.W.Write(res.ToBytes())
+		conn.Write(&res)
 	}
 	pubsub.Instance.Mu.Unlock()
 }

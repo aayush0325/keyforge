@@ -12,7 +12,7 @@ func typeCommand(args *resp.Array, conn *pubsub.Connection) {
 		msg := resp.SimpleError{
 			Val: []byte("wrong number of arguments for 'type' command"),
 		}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -21,7 +21,7 @@ func typeCommand(args *resp.Array, conn *pubsub.Connection) {
 		msg := resp.SimpleError{
 			Val: []byte("wrong data type for the 2nd argument of 'type' command"),
 		}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -29,7 +29,7 @@ func typeCommand(args *resp.Array, conn *pubsub.Connection) {
 
 	// Check if key exists as a list first
 	if db.GetList(keyStr) != nil {
-		conn.W.Write([]byte("+list\r\n"))
+		conn.Write(&resp.SimpleString{Val: []byte("list")})
 		return
 	}
 
@@ -38,7 +38,7 @@ func typeCommand(args *resp.Array, conn *pubsub.Connection) {
 	_, ok = streams.Global.KV[keyStr]
 	streams.Global.Mu.Unlock()
 	if ok {
-		conn.W.Write([]byte("+stream\r\n"))
+		conn.Write(&resp.SimpleString{Val: []byte("stream")})
 		return
 	}
 
@@ -51,7 +51,7 @@ func typeCommand(args *resp.Array, conn *pubsub.Connection) {
 
 	value, ok := <-channel
 	if ok {
-		conn.W.Write(value)
+		conn.Write(resp.RawMessage(value))
 		close(channel)
 		return
 	}

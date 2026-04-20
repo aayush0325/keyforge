@@ -6,12 +6,20 @@ import (
 	"log"
 	"strings"
 
+	conf "github.com/codecrafters-io/redis-starter-go/internal/config"
 	"github.com/codecrafters-io/redis-starter-go/internal/pubsub"
 	"github.com/codecrafters-io/redis-starter-go/internal/resp"
 )
 
 // DebugMode enables logging of all commands when set to true
 var DebugMode bool
+
+var writeCommands = map[string]struct{}{
+	"set":   {},
+	"setnx": {},
+	"del":   {},
+	"incr":  {},
+}
 
 func logCommand(arr *resp.Array) {
 	if !DebugMode {
@@ -24,6 +32,11 @@ func logCommand(arr *resp.Array) {
 		}
 	}
 	log.Printf("[DEBUG] %s", strings.Join(parts, " "))
+}
+
+func isWriteCommand(cmd string) bool {
+	_, ok := writeCommands[cmd]
+	return ok
 }
 
 var allowedInSubscribedMode = map[string]struct{}{
@@ -58,9 +71,15 @@ func ExecuteCommands(msg resp.Message, conn *pubsub.Connection) {
 				"ERR Can't execute '%s': only (P|S)SUBSCRIBE / (P|S)UNSUBSCRIBE / PING / QUIT / RESET are allowed in this context",
 				cmdLower)
 			err := resp.SimpleError{Val: []byte(errMsg)}
-			conn.W.Write(err.ToBytes())
+			conn.Write(&err)
 			return
 		}
+	}
+
+	if conn.IsTransactionQueued && (cmdLower != "exec" && cmdLower != "discard") {
+		conn.Write(&resp.SimpleString{Val: []byte("QUEUED")})
+		conn.TransactionCommands = append(conn.TransactionCommands, arr)
+		return
 	}
 
 	switch cmdLower {
@@ -112,7 +131,34 @@ func ExecuteCommands(msg resp.Message, conn *pubsub.Connection) {
 		xrange(arr, conn)
 	case "xread":
 		xread(arr, conn)
+	case "incr":
+		incr(arr, conn)
+	case "multi":
+		multi(arr, conn)
+	case "exec":
+		exec(arr, conn)
+	case "discard":
+		discard(arr, conn)
+	case "info":
+		info(arr, conn)
+	case "replconf":
+		replconf(arr, conn)
+	case "psync":
+		psync(arr, conn)
+	case "wait":
+		wait(arr, conn)
 	default:
 		commandDoesntExist(arr, conn)
 	}
+
+	if conf.IsReplica && conn.IsMaster {
+		conf.Offset += uint64(len(arr.ToBytes()))
+	}
+
+	if isWriteCommand(cmdLower) && !conf.IsReplica {
+		pubsub.Instance.PropagateToReplicas(arr.ToBytes())
+		conf.Offset += uint64(len(arr.ToBytes()))
+	}
+
+	log.Printf("offset: %d", conf.Offset)
 }

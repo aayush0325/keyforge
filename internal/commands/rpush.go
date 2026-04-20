@@ -12,7 +12,7 @@ func rpush(args *resp.Array, conn *pubsub.Connection) {
 	key, ok := args.Val[1].(*resp.BulkString)
 	if !ok {
 		msg := resp.SimpleError{Val: []byte("wrong data type of 1st argument for 'rpush' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -25,7 +25,7 @@ func rpush(args *resp.Array, conn *pubsub.Connection) {
 		val, ok := args.Val[i].(*resp.BulkString)
 		if !ok {
 			msg := resp.SimpleError{Val: []byte("wrong data type of list entry in 'rpush' command")}
-			conn.W.Write(msg.ToBytes())
+			conn.Write(&msg)
 			list.Mu.Unlock()
 			log.Printf("Lock for list %s released by the 'rpush' command goroutine", key.Str)
 			return
@@ -42,5 +42,5 @@ func rpush(args *resp.Array, conn *pubsub.Connection) {
 		ch <- struct{}{}
 	}
 
-	conn.W.Write(res.ToBytes())
+	conn.Write(&res)
 }

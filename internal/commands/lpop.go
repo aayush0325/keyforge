@@ -12,14 +12,14 @@ import (
 func lpop(args *resp.Array, conn *pubsub.Connection) {
 	if len(args.Val) != 3 && len(args.Val) != 2 {
 		msg := resp.SimpleError{Val: []byte("wrong number of arguments for 'lpop' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
 	key, ok := args.Val[1].(*resp.BulkString)
 	if !ok {
 		msg := resp.SimpleError{Val: []byte("wrong data type of 1st argument for 'lpop' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 	num := int64(1)
@@ -28,13 +28,13 @@ func lpop(args *resp.Array, conn *pubsub.Connection) {
 		numberString, ok := args.Val[2].(*resp.BulkString)
 		if !ok {
 			msg := resp.SimpleError{Val: []byte("wrong data type of 3rd argument for 'lpop' command")}
-			conn.W.Write(msg.ToBytes())
+			conn.Write(&msg)
 			return
 		}
 		number, err := strconv.ParseInt(string(numberString.Str), 10, 64)
 		if err != nil {
 			msg := resp.SimpleError{Val: []byte("error while parsing the 3rd argument of 'lpop' command")}
-			conn.W.Write(msg.ToBytes())
+			conn.Write(&msg)
 			return
 		}
 		num = number
@@ -42,7 +42,7 @@ func lpop(args *resp.Array, conn *pubsub.Connection) {
 
 	list := db.GetList(string(key.Str))
 	if list == nil {
-		conn.W.Write([]byte(resp.NULLBULKSTRING))
+		conn.Write(&resp.BulkString{Str: nil, Size: -1})
 		return
 	}
 	res := resp.Array{Val: make([]resp.Message, 0)}
@@ -68,8 +68,8 @@ func lpop(args *resp.Array, conn *pubsub.Connection) {
 	}
 
 	if len(args.Val) == 2 {
-		conn.W.Write(res.Val[0].ToBytes())
+		conn.Write(res.Val[0])
 		return
 	}
-	conn.W.Write(res.ToBytes())
+	conn.Write(&res)
 }

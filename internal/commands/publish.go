@@ -10,7 +10,7 @@ func publish(args *resp.Array, conn *pubsub.Connection) {
 		msg := resp.SimpleError{
 			Val: []byte("wrong number of arguments for 'publish' command"),
 		}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -19,7 +19,7 @@ func publish(args *resp.Array, conn *pubsub.Connection) {
 		msg := resp.SimpleError{
 			Val: []byte("wrong data type argument for 'publish' command"),
 		}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -28,7 +28,7 @@ func publish(args *resp.Array, conn *pubsub.Connection) {
 		errormessage := resp.SimpleError{
 			Val: []byte("wrong data type argument for 'publish' command"),
 		}
-		conn.W.Write(errormessage.ToBytes())
+		conn.Write(&errormessage)
 		return
 	}
 
@@ -47,5 +47,5 @@ func publish(args *resp.Array, conn *pubsub.Connection) {
 	go pubsub.Instance.DeliverMessage(cons, payload.ToBytes())
 
 	res := resp.Integer{Val: count}
-	conn.W.Write(res.ToBytes())
+	conn.Write(&res)
 }

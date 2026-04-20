@@ -10,7 +10,7 @@ func echo(args *resp.Array, conn *pubsub.Connection) {
 		msg := resp.SimpleError{
 			Val: []byte("wrong number of arguments for 'echo' command"),
 		}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -19,9 +19,9 @@ func echo(args *resp.Array, conn *pubsub.Connection) {
 		msg := resp.SimpleError{
 			Val: []byte("wrong data type argument for 'echo' command"),
 		}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
-	conn.W.Write(str.ToBytes())
+	conn.Write(str)
 }

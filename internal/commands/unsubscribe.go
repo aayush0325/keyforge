@@ -10,7 +10,7 @@ func unsubscribe(args *resp.Array, conn *pubsub.Connection) {
 		msg := resp.SimpleError{
 			Val: []byte("wrong number of arguments for 'unsubscribe' command"),
 		}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -19,7 +19,7 @@ func unsubscribe(args *resp.Array, conn *pubsub.Connection) {
 		msg := resp.SimpleError{
 			Val: []byte("wrong data type argument for 'unsubscribe' command"),
 		}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 	delete(conn.Channels, string(channel.Str)) // unlink the channel from the connection struct
@@ -37,5 +37,5 @@ func unsubscribe(args *resp.Array, conn *pubsub.Connection) {
 			&resp.Integer{Val: int64(len(conn.Channels))},
 		},
 	}
-	conn.W.Write(res.ToBytes())
+	conn.Write(&res)
 }

@@ -11,7 +11,7 @@ func llen(args *resp.Array, conn *pubsub.Connection) {
 		msg := resp.SimpleError{
 			Val: []byte("wrong number of arguments for 'llen' command"),
 		}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -19,17 +19,17 @@ func llen(args *resp.Array, conn *pubsub.Connection) {
 	if !ok {
 		msg := resp.SimpleError{
 			Val: []byte("wrong data type of list entry in 'lpush' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
 	list := db.GetList(string(key.Str))
 	if list == nil {
 		msg := resp.Integer{Val: 0}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
 	msg := resp.Integer{Val: int64(list.Q.Len())}
-	conn.W.Write(msg.ToBytes())
+	conn.Write(&msg)
 }

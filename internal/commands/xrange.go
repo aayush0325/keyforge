@@ -10,28 +10,28 @@ func xrange(args *resp.Array, conn *pubsub.Connection) {
 	// XRANGE key start end
 	if len(args.Val) < 4 {
 		msg := resp.SimpleError{Val: []byte("ERR wrong number of arguments for 'xrange' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
 	streamKey, ok := args.Val[1].(*resp.BulkString)
 	if !ok {
 		msg := resp.SimpleError{Val: []byte("ERR invalid argument for 'xrange' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
 	startIDStr, ok := args.Val[2].(*resp.BulkString)
 	if !ok {
 		msg := resp.SimpleError{Val: []byte("ERR invalid argument for 'xrange' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
 	endIDStr, ok := args.Val[3].(*resp.BulkString)
 	if !ok {
 		msg := resp.SimpleError{Val: []byte("ERR invalid argument for 'xrange' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -39,7 +39,7 @@ func xrange(args *resp.Array, conn *pubsub.Connection) {
 	startID, err := streams.NewStreamIDForRange(string(startIDStr.Str), false)
 	if err != nil {
 		msg := resp.SimpleError{Val: []byte("ERR Invalid stream ID for 'xrange' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -47,7 +47,7 @@ func xrange(args *resp.Array, conn *pubsub.Connection) {
 	endID, err := streams.NewStreamIDForRange(string(endIDStr.Str), true)
 	if err != nil {
 		msg := resp.SimpleError{Val: []byte("ERR Invalid stream ID for 'xrange' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -57,7 +57,7 @@ func xrange(args *resp.Array, conn *pubsub.Connection) {
 		streams.Global.Mu.Unlock()
 		// Return empty array if stream doesn't exist
 		emptyArr := &resp.Array{Val: []resp.Message{}}
-		conn.W.Write(emptyArr.ToBytes())
+		conn.Write(emptyArr)
 		return
 	}
 
@@ -87,5 +87,5 @@ func xrange(args *resp.Array, conn *pubsub.Connection) {
 	}
 
 	result := &resp.Array{Val: resultArr}
-	conn.W.Write(result.ToBytes())
+	conn.Write(result)
 }

@@ -11,27 +11,27 @@ import (
 func xadd(args *resp.Array, conn *pubsub.Connection) {
 	if len(args.Val) < 5 {
 		msg := resp.SimpleError{Val: []byte("too few arguments for 'xadd' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 	streamKey, ok := args.Val[1].(*resp.BulkString)
 	if !ok {
 		msg := resp.SimpleError{Val: []byte("ERR invalid argument for 'xadd' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
 	rawStreamID, ok := args.Val[2].(*resp.BulkString)
 	if !ok {
 		msg := resp.SimpleError{Val: []byte("ERR invalid argument for 'xadd' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
 	streamID, err := streams.NewStreamID(string(rawStreamID.Str))
 	if err != nil {
 		msg := resp.SimpleError{Val: []byte("Invalid stream ID for 'xadd' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -39,20 +39,20 @@ func xadd(args *resp.Array, conn *pubsub.Connection) {
 	for i := 3; i < len(args.Val); i += 2 {
 		if i+1 > len(args.Val) {
 			msg := resp.SimpleError{Val: []byte("Invalid number of args for 'xadd' command")}
-			conn.W.Write(msg.ToBytes())
+			conn.Write(&msg)
 			return
 		}
 		key, ok := args.Val[i].(*resp.BulkString)
 		if !ok {
 			msg := resp.SimpleError{Val: []byte("ERR invalid argument for 'xadd' command")}
-			conn.W.Write(msg.ToBytes())
+			conn.Write(&msg)
 			return
 		}
 
 		val, ok := args.Val[i+1].(*resp.BulkString)
 		if !ok {
 			msg := resp.SimpleError{Val: []byte("ERR invalid argument for 'xadd' command")}
-			conn.W.Write(msg.ToBytes())
+			conn.Write(&msg)
 			return
 		}
 
@@ -104,7 +104,7 @@ func xadd(args *resp.Array, conn *pubsub.Connection) {
 	if streamID.IsZero() {
 		streams.Global.Mu.Unlock()
 		msg := resp.SimpleError{Val: []byte("ERR The ID specified in XADD must be greater than 0-0")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -116,7 +116,7 @@ func xadd(args *resp.Array, conn *pubsub.Connection) {
 		// New stream - just create it (ID already validated to be > 0-0)
 		streams.Global.KV[string(streamKey.Str)] = streams.NewStream(streamEntry)
 		streams.Global.Mu.Unlock()
-		conn.W.Write(actualIDBulk.ToBytes())
+		conn.Write(actualIDBulk)
 		return
 	}
 
@@ -124,7 +124,7 @@ func xadd(args *resp.Array, conn *pubsub.Connection) {
 	if existingStream.LastEntry != nil && streamID.Compare(existingStream.LastEntry.ID) <= 0 {
 		streams.Global.Mu.Unlock()
 		msg := resp.SimpleError{Val: []byte("ERR The ID specified in XADD is equal or smaller than the target stream top item")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -141,5 +141,5 @@ func xadd(args *resp.Array, conn *pubsub.Connection) {
 	}
 
 	streams.Global.Mu.Unlock()
-	conn.W.Write(actualIDBulk.ToBytes())
+	conn.Write(actualIDBulk)
 }

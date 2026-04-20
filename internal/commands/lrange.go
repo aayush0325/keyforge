@@ -14,40 +14,40 @@ func lrange(args *resp.Array, conn *pubsub.Connection) {
 	key, ok := args.Val[1].(*resp.BulkString)
 	if !ok {
 		msg := resp.SimpleError{Val: []byte("wrong data type of 1st argument for 'lrange' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 	startString, ok := args.Val[2].(*resp.BulkString)
 	if !ok {
 		msg := resp.SimpleError{Val: []byte("wrong data type of 2nd argument for 'lrange' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
 	stopString, ok := args.Val[3].(*resp.BulkString)
 	if !ok {
 		msg := resp.SimpleError{Val: []byte("wrong data type of 3rd argument for 'lrange' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
 	start, err := strconv.ParseInt(string(startString.Str), 10, 64)
 	if err != nil {
 		msg := resp.SimpleError{Val: []byte("error while parsing the start index")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 	stop, err := strconv.ParseInt(string(stopString.Str), 10, 64)
 	if err != nil {
 		msg := resp.SimpleError{Val: []byte("error while parsing the stop index")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
 	list := db.GetList(string(key.Str))
 	if list == nil {
 		res := resp.Array{Val: make([]resp.Message, 0)}
-		conn.W.Write(res.ToBytes())
+		conn.Write(&res)
 		return
 	}
 	list.Mu.Lock()
@@ -55,7 +55,7 @@ func lrange(args *resp.Array, conn *pubsub.Connection) {
 	// Check if indices are valid
 	if !utils.ValidateIndices(start, stop, uint(len(list.Q.Buf))) {
 		res := resp.Array{Val: make([]resp.Message, 0)}
-		conn.W.Write(res.ToBytes())
+		conn.Write(&res)
 		list.Mu.Unlock()
 		log.Printf("Lock for list %s released by the 'lrange' command goroutine", key.Str)
 		return
@@ -69,5 +69,5 @@ func lrange(args *resp.Array, conn *pubsub.Connection) {
 	res := utils.GetRespArrayBulkString(slice)
 	list.Mu.Unlock()
 	log.Printf("Lock for list %s released by the 'lrange' command goroutine", key.Str)
-	conn.W.Write(res.ToBytes())
+	conn.Write(&res)
 }

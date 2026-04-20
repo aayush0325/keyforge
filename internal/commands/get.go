@@ -11,7 +11,7 @@ func get(args *resp.Array, conn *pubsub.Connection) {
 		msg := resp.SimpleError{
 			Val: []byte("wrong number of arguments for 'get' command"),
 		}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -20,7 +20,7 @@ func get(args *resp.Array, conn *pubsub.Connection) {
 		msg := resp.SimpleError{
 			Val: []byte("wrong data type for the 2nd argument of 'get' command"),
 		}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -34,7 +34,7 @@ func get(args *resp.Array, conn *pubsub.Connection) {
 
 	value, ok := <-channel
 	if ok {
-		conn.W.Write(value)
+		conn.Write(resp.RawMessage(value))
 		close(channel)
 		return
 	}

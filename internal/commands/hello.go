@@ -18,7 +18,7 @@ func hello(args *resp.Array, conn *pubsub.Connection) {
 	version, ok := args.Val[1].(*resp.BulkString)
 	if !ok {
 		msg := resp.SimpleError{Val: []byte("ERR Protocol version is not an integer or out of range")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -30,7 +30,7 @@ func hello(args *resp.Array, conn *pubsub.Connection) {
 
 	// For RESP3 (version 3) or higher, return NOPROTO error
 	msg := resp.SimpleError{Val: []byte("NOPROTO sorry this Redis does not support RESP3")}
-	conn.W.Write(msg.ToBytes())
+	conn.Write(&msg)
 }
 
 func sendHelloResponse(conn *pubsub.Connection) {
@@ -46,5 +46,5 @@ func sendHelloResponse(conn *pubsub.Connection) {
 			&resp.Integer{Val: 2},
 		},
 	}
-	conn.W.Write(response.ToBytes())
+	conn.Write(&response)
 }

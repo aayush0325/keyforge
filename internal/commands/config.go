@@ -17,14 +17,14 @@ var ServerConfig = map[string]string{
 func config(args *resp.Array, conn *pubsub.Connection) {
 	if len(args.Val) < 2 {
 		msg := resp.SimpleError{Val: []byte("ERR wrong number of arguments for 'config' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
 	subCmd, ok := args.Val[1].(*resp.BulkString)
 	if !ok {
 		msg := resp.SimpleError{Val: []byte("ERR invalid argument type")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -35,21 +35,21 @@ func config(args *resp.Array, conn *pubsub.Connection) {
 		configSet(args, conn)
 	default:
 		msg := resp.SimpleError{Val: []byte("ERR unknown subcommand '" + string(subCmd.Str) + "'. Try CONFIG GET, CONFIG SET.")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 	}
 }
 
 func configGet(args *resp.Array, conn *pubsub.Connection) {
 	if len(args.Val) < 3 {
 		msg := resp.SimpleError{Val: []byte("ERR wrong number of arguments for 'config|get' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
 	pattern, ok := args.Val[2].(*resp.BulkString)
 	if !ok {
 		msg := resp.SimpleError{Val: []byte("ERR invalid argument type")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -68,27 +68,27 @@ func configGet(args *resp.Array, conn *pubsub.Connection) {
 		}
 	}
 
-	conn.W.Write(result.ToBytes())
+	conn.Write(result)
 }
 
 func configSet(args *resp.Array, conn *pubsub.Connection) {
 	if len(args.Val) < 4 {
 		msg := resp.SimpleError{Val: []byte("ERR wrong number of arguments for 'config|set' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
 	param, ok := args.Val[2].(*resp.BulkString)
 	if !ok {
 		msg := resp.SimpleError{Val: []byte("ERR invalid argument type")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
 	value, ok := args.Val[3].(*resp.BulkString)
 	if !ok {
 		msg := resp.SimpleError{Val: []byte("ERR invalid argument type")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -98,10 +98,10 @@ func configSet(args *resp.Array, conn *pubsub.Connection) {
 	// Only allow setting known config parameters
 	if _, exists := ServerConfig[paramStr]; !exists {
 		msg := resp.SimpleError{Val: []byte("ERR unknown configuration parameter '" + paramStr + "'")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
 	ServerConfig[paramStr] = valueStr
-	conn.W.Write([]byte("+OK\r\n"))
+	conn.Write(&resp.SimpleString{Val: []byte("OK")})
 }

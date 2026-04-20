@@ -14,7 +14,7 @@ import (
 func blpop(args *resp.Array, conn *pubsub.Connection) {
 	if len(args.Val) < 3 {
 		msg := resp.SimpleError{Val: []byte("wrong number of arguments for 'blpop' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -22,14 +22,14 @@ func blpop(args *resp.Array, conn *pubsub.Connection) {
 	timeoutString, ok := args.Val[len(args.Val)-1].(*resp.BulkString)
 	if !ok {
 		msg := resp.SimpleError{Val: []byte("wrong data type for timeout argument of 'blpop' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
 	timeoutFloat, err := strconv.ParseFloat(string(timeoutString.Str), 64)
 	if err != nil {
 		msg := resp.SimpleError{Val: []byte("error while parsing timeout argument of 'blpop' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -39,7 +39,7 @@ func blpop(args *resp.Array, conn *pubsub.Connection) {
 		key, ok := args.Val[i].(*resp.BulkString)
 		if !ok {
 			msg := resp.SimpleError{Val: []byte("wrong data type for key argument of 'blpop' command")}
-			conn.W.Write(msg.ToBytes())
+			conn.Write(&msg)
 			return
 		}
 		keys = append(keys, key)
@@ -61,7 +61,7 @@ func blpop(args *resp.Array, conn *pubsub.Connection) {
 
 			if !ok {
 				msg := resp.SimpleError{Val: []byte("unexpectedly list is empty while doing PopFront()")}
-				conn.W.Write(msg.ToBytes())
+				conn.Write(&msg)
 				return
 			}
 
@@ -71,7 +71,7 @@ func blpop(args *resp.Array, conn *pubsub.Connection) {
 					&resp.BulkString{Str: []byte(val), Size: len(val)},
 				},
 			}
-			conn.W.Write(res.ToBytes())
+			conn.Write(&res)
 			return
 		}
 		list.Mu.Unlock()
@@ -173,7 +173,7 @@ func blpop(args *resp.Array, conn *pubsub.Connection) {
 			}
 		}
 		// All channels were successfully removed - genuine timeout
-		conn.W.Write([]byte("*-1\r\n"))
+		conn.Write(&resp.Array{Val: nil})
 		return
 	}
 
@@ -199,7 +199,7 @@ func handleChannelEvent(list *db.ListEntry, conn *pubsub.Connection, key *resp.B
 
 	if !ok {
 		msg := resp.SimpleError{Val: []byte("unexpectedly list is empty while doing PopFront()")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -210,5 +210,5 @@ func handleChannelEvent(list *db.ListEntry, conn *pubsub.Connection, key *resp.B
 		},
 	}
 
-	conn.W.Write(res.ToBytes())
+	conn.Write(&res)
 }

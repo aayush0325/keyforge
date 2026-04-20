@@ -9,7 +9,7 @@ func ping(args *resp.Array, conn *pubsub.Connection) {
 	if len(conn.Channels) > 0 {
 		if len(args.Val) > 2 {
 			msg := resp.SimpleError{Val: []byte("wrong number of arguments for 'ping' command")}
-			conn.W.Write(msg.ToBytes())
+			conn.Write(&msg)
 			return
 		}
 
@@ -22,25 +22,25 @@ func ping(args *resp.Array, conn *pubsub.Connection) {
 			str, ok := args.Val[1].(*resp.BulkString)
 			if !ok {
 				msg := resp.SimpleError{Val: []byte("wrong data type of 2nd argument for 'ping' command")}
-				conn.W.Write(msg.ToBytes())
+				conn.Write(&msg)
 				return
 			}
 			arg = string(str.Str)
 		}
 		responseArray := &resp.Array{Val: []resp.Message{pongMessage, &resp.BulkString{Str: []byte(arg), Size: len(arg)}}}
-		conn.W.Write(responseArray.ToBytes())
+		conn.Write(responseArray)
 		return
 	}
 
 	if len(args.Val) == 1 {
 		msg := resp.SimpleString{Val: []byte("PONG")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
 	if len(args.Val) > 2 {
 		msg := resp.SimpleError{Val: []byte("wrong number of arguments for 'ping' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
@@ -48,9 +48,9 @@ func ping(args *resp.Array, conn *pubsub.Connection) {
 
 	if !ok {
 		msg := resp.SimpleError{Val: []byte("wrong data type of 2nd argument for 'ping' command")}
-		conn.W.Write(msg.ToBytes())
+		conn.Write(&msg)
 		return
 	}
 
-	conn.W.Write(str.ToBytes())
+	conn.Write(str)
 }
