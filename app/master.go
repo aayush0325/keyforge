@@ -7,9 +7,9 @@ import (
 	"log"
 	"net"
 
-	"github.com/codecrafters-io/redis-starter-go/internal/commands"
-	"github.com/codecrafters-io/redis-starter-go/internal/parser"
-	"github.com/codecrafters-io/redis-starter-go/internal/pubsub"
+	"github.com/aayush0325/keyforge/internal/commands"
+	"github.com/aayush0325/keyforge/internal/parser"
+	"github.com/aayush0325/keyforge/internal/pubsub"
 )
 
 func handleClientConn(c net.Conn, reader *bufio.Reader, isMaster bool) {

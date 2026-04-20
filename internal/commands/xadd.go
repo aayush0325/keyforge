@@ -3,9 +3,9 @@ package commands
 import (
 	"time"
 
-	"github.com/codecrafters-io/redis-starter-go/internal/pubsub"
-	"github.com/codecrafters-io/redis-starter-go/internal/resp"
-	"github.com/codecrafters-io/redis-starter-go/internal/streams"
+	"github.com/aayush0325/keyforge/internal/pubsub"
+	"github.com/aayush0325/keyforge/internal/resp"
+	"github.com/aayush0325/keyforge/internal/streams"
 )
 
 func xadd(args *resp.Array, conn *pubsub.Connection) {

@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/codecrafters-io/redis-starter-go/internal/resp"
+	"github.com/aayush0325/keyforge/internal/resp"
 )
 
 func TestParseSimpleString(t *testing.T) {

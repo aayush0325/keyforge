@@ -1,6 +1,6 @@
 package utils
 
-import "github.com/codecrafters-io/redis-starter-go/internal/resp"
+import "github.com/aayush0325/keyforge/internal/resp"
 
 // Takes an array of strings and returns a RESP array of bulk strings
 func GetRespArrayBulkString(arr []string) resp.Array {

@@ -4,9 +4,9 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/codecrafters-io/redis-starter-go/internal/db"
-	"github.com/codecrafters-io/redis-starter-go/internal/pubsub"
-	"github.com/codecrafters-io/redis-starter-go/internal/resp"
+	"github.com/aayush0325/keyforge/internal/db"
+	"github.com/aayush0325/keyforge/internal/pubsub"
+	"github.com/aayush0325/keyforge/internal/resp"
 )
 
 func lpop(args *resp.Array, conn *pubsub.Connection) {

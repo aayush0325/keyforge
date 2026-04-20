@@ -3,8 +3,8 @@ package commands
 import (
 	"strings"
 
-	"github.com/codecrafters-io/redis-starter-go/internal/pubsub"
-	"github.com/codecrafters-io/redis-starter-go/internal/resp"
+	"github.com/aayush0325/keyforge/internal/pubsub"
+	"github.com/aayush0325/keyforge/internal/resp"
 )
 
 // client handles the CLIENT command and its subcommands

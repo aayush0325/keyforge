@@ -1,9 +1,9 @@
 package utils
 
 import (
-	"github.com/codecrafters-io/redis-starter-go/internal/db"
-	"github.com/codecrafters-io/redis-starter-go/internal/pubsub"
-	"github.com/codecrafters-io/redis-starter-go/internal/streams"
+	"github.com/aayush0325/keyforge/internal/db"
+	"github.com/aayush0325/keyforge/internal/pubsub"
+	"github.com/aayush0325/keyforge/internal/streams"
 )
 
 func GlobalInitFunction() {

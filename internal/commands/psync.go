@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strconv"
 
-	conf "github.com/codecrafters-io/redis-starter-go/internal/config"
-	"github.com/codecrafters-io/redis-starter-go/internal/pubsub"
-	"github.com/codecrafters-io/redis-starter-go/internal/rdb"
-	"github.com/codecrafters-io/redis-starter-go/internal/resp"
+	conf "github.com/aayush0325/keyforge/internal/config"
+	"github.com/aayush0325/keyforge/internal/pubsub"
+	"github.com/aayush0325/keyforge/internal/rdb"
+	"github.com/aayush0325/keyforge/internal/resp"
 )
 
 func psync(_ *resp.Array, conn *pubsub.Connection) {

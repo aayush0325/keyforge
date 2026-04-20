@@ -1,4 +1,4 @@
-module github.com/codecrafters-io/redis-starter-go
+module github.com/aayush0325/keyforge
 
 go 1.25.0
 

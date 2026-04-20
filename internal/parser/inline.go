@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"strings"
 
-	"github.com/codecrafters-io/redis-starter-go/internal/resp"
+	"github.com/aayush0325/keyforge/internal/resp"
 )
 
 // handleInlineCommand parses Redis inline commands (plain text format)

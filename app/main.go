@@ -12,8 +12,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/codecrafters-io/redis-starter-go/internal/config"
-	"github.com/codecrafters-io/redis-starter-go/internal/utils"
+	"github.com/aayush0325/keyforge/internal/config"
+	"github.com/aayush0325/keyforge/internal/utils"
 )
 
 var debug = flag.Bool("debug", false, "Enable debug mode to log all commands")

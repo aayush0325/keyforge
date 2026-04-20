@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"path/filepath"
 
-	"github.com/codecrafters-io/redis-starter-go/internal/pubsub"
-	"github.com/codecrafters-io/redis-starter-go/internal/resp"
+	"github.com/aayush0325/keyforge/internal/pubsub"
+	"github.com/aayush0325/keyforge/internal/resp"
 )
 
 // ServerConfig holds the configuration parameters for the Redis server

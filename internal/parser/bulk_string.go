@@ -6,7 +6,7 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/codecrafters-io/redis-starter-go/internal/resp"
+	"github.com/aayush0325/keyforge/internal/resp"
 )
 
 func handleBulkString(r *bufio.Reader) (resp.Message, error) {
