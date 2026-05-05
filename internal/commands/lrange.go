@@ -2,7 +2,6 @@ package commands
 
 import (
 	"log"
-	"strconv"
 
 	"github.com/aayush0325/keyforge/internal/db"
 	"github.com/aayush0325/keyforge/internal/pubsub"
@@ -11,36 +10,21 @@ import (
 )
 
 func lrange(args *resp.Array, conn *pubsub.Connection) {
-	key, ok := args.Val[1].(*resp.BulkString)
-	if !ok {
-		msg := resp.SimpleError{Val: []byte("wrong data type of 1st argument for 'lrange' command")}
-		conn.Write(&msg)
-		return
-	}
-	startString, ok := args.Val[2].(*resp.BulkString)
-	if !ok {
-		msg := resp.SimpleError{Val: []byte("wrong data type of 2nd argument for 'lrange' command")}
-		conn.Write(&msg)
+	if !requireMinArgs(args, 4, "lrange", conn) {
 		return
 	}
 
-	stopString, ok := args.Val[3].(*resp.BulkString)
+	key, ok := getBulkArg(args, 1, "lrange", conn)
 	if !ok {
-		msg := resp.SimpleError{Val: []byte("wrong data type of 3rd argument for 'lrange' command")}
-		conn.Write(&msg)
+		return
+	}
+	start, ok := parseIntBulkArg(args, 2, "lrange", conn)
+	if !ok {
 		return
 	}
 
-	start, err := strconv.ParseInt(string(startString.Str), 10, 64)
-	if err != nil {
-		msg := resp.SimpleError{Val: []byte("error while parsing the start index")}
-		conn.Write(&msg)
-		return
-	}
-	stop, err := strconv.ParseInt(string(stopString.Str), 10, 64)
-	if err != nil {
-		msg := resp.SimpleError{Val: []byte("error while parsing the stop index")}
-		conn.Write(&msg)
+	stop, ok := parseIntBulkArg(args, 3, "lrange", conn)
+	if !ok {
 		return
 	}
 

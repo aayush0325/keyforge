@@ -2,7 +2,6 @@ package commands
 
 import (
 	"log"
-	"strconv"
 	"time"
 
 	conf "github.com/aayush0325/keyforge/internal/config"
@@ -11,29 +10,17 @@ import (
 )
 
 func wait(args *resp.Array, conn *pubsub.Connection) {
-	// Parse timeout
-	timeoutString, ok := args.Val[2].(*resp.BulkString)
+	if !requireExactArgs(args, 3, "wait", conn) {
+		return
+	}
+
+	numreplica, ok := parseIntBulkArg(args, 1, "wait", conn)
 	if !ok {
-		conn.Write(&resp.SimpleError{Val: []byte("wrong data type for timeout argument of 'wait' command")})
 		return
 	}
 
-	timeout, err := strconv.ParseInt(string(timeoutString.Str), 10, 64)
-	if err != nil {
-		conn.Write(&resp.SimpleError{Val: []byte("error while parsing timeout argument of 'wait' command")})
-		return
-	}
-
-	// Parse numreplicas
-	numreplicastr, ok := args.Val[1].(*resp.BulkString)
+	timeout, ok := parseIntBulkArg(args, 2, "wait", conn)
 	if !ok {
-		conn.Write(&resp.SimpleError{Val: []byte("wrong data type of 2nd argument for 'wait' command")})
-		return
-	}
-
-	numreplica, err := strconv.ParseInt(string(numreplicastr.Str), 10, 64)
-	if err != nil {
-		conn.Write(&resp.SimpleError{Val: []byte("error while parsing numreplicas")})
 		return
 	}
 

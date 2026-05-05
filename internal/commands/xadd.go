@@ -9,22 +9,16 @@ import (
 )
 
 func xadd(args *resp.Array, conn *pubsub.Connection) {
-	if len(args.Val) < 5 {
-		msg := resp.SimpleError{Val: []byte("too few arguments for 'xadd' command")}
-		conn.Write(&msg)
+	if !requireMinArgs(args, 5, "xadd", conn) {
 		return
 	}
-	streamKey, ok := args.Val[1].(*resp.BulkString)
+	streamKey, ok := getBulkArg(args, 1, "xadd", conn)
 	if !ok {
-		msg := resp.SimpleError{Val: []byte("ERR invalid argument for 'xadd' command")}
-		conn.Write(&msg)
 		return
 	}
 
-	rawStreamID, ok := args.Val[2].(*resp.BulkString)
+	rawStreamID, ok := getBulkArg(args, 2, "xadd", conn)
 	if !ok {
-		msg := resp.SimpleError{Val: []byte("ERR invalid argument for 'xadd' command")}
-		conn.Write(&msg)
 		return
 	}
 
@@ -42,17 +36,13 @@ func xadd(args *resp.Array, conn *pubsub.Connection) {
 			conn.Write(&msg)
 			return
 		}
-		key, ok := args.Val[i].(*resp.BulkString)
+		key, ok := getBulkArgMsg(args, i, conn, "ERR invalid argument for 'xadd' command")
 		if !ok {
-			msg := resp.SimpleError{Val: []byte("ERR invalid argument for 'xadd' command")}
-			conn.Write(&msg)
 			return
 		}
 
-		val, ok := args.Val[i+1].(*resp.BulkString)
+		val, ok := getBulkArgMsg(args, i+1, conn, "ERR invalid argument for 'xadd' command")
 		if !ok {
-			msg := resp.SimpleError{Val: []byte("ERR invalid argument for 'xadd' command")}
-			conn.Write(&msg)
 			return
 		}
 

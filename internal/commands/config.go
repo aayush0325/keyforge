@@ -15,16 +15,12 @@ var ServerConfig = map[string]string{
 }
 
 func config(args *resp.Array, conn *pubsub.Connection) {
-	if len(args.Val) < 2 {
-		msg := resp.SimpleError{Val: []byte("ERR wrong number of arguments for 'config' command")}
-		conn.Write(&msg)
+	if !requireMinArgs(args, 2, "config", conn) {
 		return
 	}
 
-	subCmd, ok := args.Val[1].(*resp.BulkString)
+	subCmd, ok := getBulkArg(args, 1, "config", conn)
 	if !ok {
-		msg := resp.SimpleError{Val: []byte("ERR invalid argument type")}
-		conn.Write(&msg)
 		return
 	}
 
@@ -40,16 +36,12 @@ func config(args *resp.Array, conn *pubsub.Connection) {
 }
 
 func configGet(args *resp.Array, conn *pubsub.Connection) {
-	if len(args.Val) < 3 {
-		msg := resp.SimpleError{Val: []byte("ERR wrong number of arguments for 'config|get' command")}
-		conn.Write(&msg)
+	if !requireMinArgs(args, 3, "config|get", conn) {
 		return
 	}
 
-	pattern, ok := args.Val[2].(*resp.BulkString)
+	pattern, ok := getBulkArg(args, 2, "config|get", conn)
 	if !ok {
-		msg := resp.SimpleError{Val: []byte("ERR invalid argument type")}
-		conn.Write(&msg)
 		return
 	}
 
@@ -72,23 +64,17 @@ func configGet(args *resp.Array, conn *pubsub.Connection) {
 }
 
 func configSet(args *resp.Array, conn *pubsub.Connection) {
-	if len(args.Val) < 4 {
-		msg := resp.SimpleError{Val: []byte("ERR wrong number of arguments for 'config|set' command")}
-		conn.Write(&msg)
+	if !requireMinArgs(args, 4, "config|set", conn) {
 		return
 	}
 
-	param, ok := args.Val[2].(*resp.BulkString)
+	param, ok := getBulkArg(args, 2, "config|set", conn)
 	if !ok {
-		msg := resp.SimpleError{Val: []byte("ERR invalid argument type")}
-		conn.Write(&msg)
 		return
 	}
 
-	value, ok := args.Val[3].(*resp.BulkString)
+	value, ok := getBulkArg(args, 3, "config|set", conn)
 	if !ok {
-		msg := resp.SimpleError{Val: []byte("ERR invalid argument type")}
-		conn.Write(&msg)
 		return
 	}
 

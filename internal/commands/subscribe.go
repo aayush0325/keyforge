@@ -6,22 +6,14 @@ import (
 )
 
 func subscribe(args *resp.Array, conn *pubsub.Connection) {
-	if len(args.Val) < 2 {
-		msg := resp.SimpleError{
-			Val: []byte("wrong number of arguments for 'subscribe' command"),
-		}
-		conn.Write(&msg)
+	if !requireMinArgs(args, 2, "subscribe", conn) {
 		return
 	}
 	channels := make([][]byte, 0)
 
 	for i := 1; i < len(args.Val); i++ {
-		channel, ok := args.Val[i].(*resp.BulkString)
+		channel, ok := getBulkArgMsg(args, i, conn, "wrong data type argument for 'subscribe' command")
 		if !ok {
-			msg := resp.SimpleError{
-				Val: []byte("wrong data type argument for 'echo' command"),
-			}
-			conn.Write(&msg)
 			return
 		}
 		channels = append(channels, channel.Str)

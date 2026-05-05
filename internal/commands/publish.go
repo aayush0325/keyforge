@@ -6,29 +6,17 @@ import (
 )
 
 func publish(args *resp.Array, conn *pubsub.Connection) {
-	if len(args.Val) != 3 {
-		msg := resp.SimpleError{
-			Val: []byte("wrong number of arguments for 'publish' command"),
-		}
-		conn.Write(&msg)
+	if !requireExactArgs(args, 3, "publish", conn) {
 		return
 	}
 
-	channel, ok := args.Val[1].(*resp.BulkString)
+	channel, ok := getBulkArg(args, 1, "publish", conn)
 	if !ok {
-		msg := resp.SimpleError{
-			Val: []byte("wrong data type argument for 'publish' command"),
-		}
-		conn.Write(&msg)
 		return
 	}
 
-	message, ok := args.Val[2].(*resp.BulkString)
+	message, ok := getBulkArg(args, 2, "publish", conn)
 	if !ok {
-		errormessage := resp.SimpleError{
-			Val: []byte("wrong data type argument for 'publish' command"),
-		}
-		conn.Write(&errormessage)
 		return
 	}
 

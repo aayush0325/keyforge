@@ -9,10 +9,12 @@ import (
 )
 
 func rpush(args *resp.Array, conn *pubsub.Connection) {
-	key, ok := args.Val[1].(*resp.BulkString)
+	if !requireMinArgs(args, 2, "rpush", conn) {
+		return
+	}
+
+	key, ok := getBulkArg(args, 1, "rpush", conn)
 	if !ok {
-		msg := resp.SimpleError{Val: []byte("wrong data type of 1st argument for 'rpush' command")}
-		conn.Write(&msg)
 		return
 	}
 
@@ -22,10 +24,8 @@ func rpush(args *resp.Array, conn *pubsub.Connection) {
 	log.Printf("Lock for list %s acquired by the 'rpush' command goroutine", key.Str)
 
 	for i := 2; i < len(args.Val); i++ {
-		val, ok := args.Val[i].(*resp.BulkString)
+		val, ok := getBulkArgMsg(args, i, conn, "wrong data type of list entry in 'rpush' command")
 		if !ok {
-			msg := resp.SimpleError{Val: []byte("wrong data type of list entry in 'rpush' command")}
-			conn.Write(&msg)
 			list.Mu.Unlock()
 			log.Printf("Lock for list %s released by the 'rpush' command goroutine", key.Str)
 			return

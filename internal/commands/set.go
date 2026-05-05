@@ -10,35 +10,17 @@ import (
 )
 
 func set(args *resp.Array, conn *pubsub.Connection) {
-	if len(args.Val) < 3 {
-		if conn != nil {
-			msg := resp.SimpleError{
-				Val: []byte("wrong number of arguments for 'set' command"),
-			}
-			conn.Write(&msg)
-		}
+	if !requireMinArgs(args, 3, "set", conn) {
 		return
 	}
 
-	key, ok := args.Val[1].(*resp.BulkString)
+	key, ok := getBulkArg(args, 1, "set", conn)
 	if !ok {
-		if conn != nil {
-			msg := resp.SimpleError{
-				Val: []byte("wrong data type for the 2nd argument of 'set' command"),
-			}
-			conn.Write(&msg)
-		}
 		return
 	}
 
-	val, ok := args.Val[2].(*resp.BulkString)
+	val, ok := getBulkArg(args, 2, "set", conn)
 	if !ok {
-		if conn != nil {
-			msg := resp.SimpleError{
-				Val: []byte("wrong data type for the 3rd argument of 'set' command"),
-			}
-			conn.Write(&msg)
-		}
 		return
 	}
 
@@ -49,14 +31,8 @@ func set(args *resp.Array, conn *pubsub.Connection) {
 	// Parse optional arguments: NX, EX, PX
 	i := 3
 	for i < len(args.Val) {
-		opt, ok := args.Val[i].(*resp.BulkString)
+		opt, ok := getBulkArgMsg(args, i, conn, "wrong data type for argument")
 		if !ok {
-			if conn != nil {
-				msg := resp.SimpleError{
-					Val: []byte("wrong data type for argument"),
-				}
-				conn.Write(&msg)
-			}
 			return
 		}
 
@@ -77,14 +53,8 @@ func set(args *resp.Array, conn *pubsub.Connection) {
 				return
 			}
 
-			ttlArg, ok := args.Val[i+1].(*resp.BulkString)
+			ttlArg, ok := getBulkArgMsg(args, i+1, conn, "wrong data type for TTL argument")
 			if !ok {
-				if conn != nil {
-					msg := resp.SimpleError{
-						Val: []byte("wrong data type for TTL argument"),
-					}
-					conn.Write(&msg)
-				}
 				return
 			}
 
@@ -135,35 +105,17 @@ func set(args *resp.Array, conn *pubsub.Connection) {
 // setnx implements SETNX command - set if not exists
 // Returns 1 if key was set, 0 if key already exists
 func setnx(args *resp.Array, conn *pubsub.Connection) {
-	if len(args.Val) != 3 {
-		if conn != nil {
-			msg := resp.SimpleError{
-				Val: []byte("wrong number of arguments for 'setnx' command"),
-			}
-			conn.Write(&msg)
-		}
+	if !requireExactArgs(args, 3, "setnx", conn) {
 		return
 	}
 
-	key, ok := args.Val[1].(*resp.BulkString)
+	key, ok := getBulkArg(args, 1, "setnx", conn)
 	if !ok {
-		if conn != nil {
-			msg := resp.SimpleError{
-				Val: []byte("wrong data type for the 2nd argument of 'setnx' command"),
-			}
-			conn.Write(&msg)
-		}
 		return
 	}
 
-	val, ok := args.Val[2].(*resp.BulkString)
+	val, ok := getBulkArg(args, 2, "setnx", conn)
 	if !ok {
-		if conn != nil {
-			msg := resp.SimpleError{
-				Val: []byte("wrong data type for the 3rd argument of 'setnx' command"),
-			}
-			conn.Write(&msg)
-		}
 		return
 	}
 

@@ -19,10 +19,8 @@ func ping(args *resp.Array, conn *pubsub.Connection) {
 		if len(args.Val) == 1 {
 			arg = ""
 		} else {
-			str, ok := args.Val[1].(*resp.BulkString)
+			str, ok := getBulkArg(args, 1, "ping", conn)
 			if !ok {
-				msg := resp.SimpleError{Val: []byte("wrong data type of 2nd argument for 'ping' command")}
-				conn.Write(&msg)
 				return
 			}
 			arg = string(str.Str)
@@ -44,11 +42,8 @@ func ping(args *resp.Array, conn *pubsub.Connection) {
 		return
 	}
 
-	str, ok := args.Val[1].(*resp.BulkString)
-
+	str, ok := getBulkArg(args, 1, "ping", conn)
 	if !ok {
-		msg := resp.SimpleError{Val: []byte("wrong data type of 2nd argument for 'ping' command")}
-		conn.Write(&msg)
 		return
 	}
 

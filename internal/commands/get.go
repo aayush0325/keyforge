@@ -7,20 +7,12 @@ import (
 )
 
 func get(args *resp.Array, conn *pubsub.Connection) {
-	if len(args.Val) != 2 {
-		msg := resp.SimpleError{
-			Val: []byte("wrong number of arguments for 'get' command"),
-		}
-		conn.Write(&msg)
+	if !requireExactArgs(args, 2, "get", conn) {
 		return
 	}
 
-	key, ok := args.Val[1].(*resp.BulkString)
+	key, ok := getBulkArg(args, 1, "get", conn)
 	if !ok {
-		msg := resp.SimpleError{
-			Val: []byte("wrong data type for the 2nd argument of 'get' command"),
-		}
-		conn.Write(&msg)
 		return
 	}
 

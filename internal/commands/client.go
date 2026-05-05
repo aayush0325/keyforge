@@ -9,16 +9,12 @@ import (
 
 // client handles the CLIENT command and its subcommands
 func client(args *resp.Array, conn *pubsub.Connection) {
-	if len(args.Val) < 2 {
-		msg := resp.SimpleError{Val: []byte("ERR wrong number of arguments for 'client' command")}
-		conn.Write(&msg)
+	if !requireMinArgs(args, 2, "client", conn) {
 		return
 	}
 
-	subCmd, ok := args.Val[1].(*resp.BulkString)
+	subCmd, ok := getBulkArg(args, 1, "client", conn)
 	if !ok {
-		msg := resp.SimpleError{Val: []byte("ERR invalid argument for 'client' command")}
-		conn.Write(&msg)
 		return
 	}
 

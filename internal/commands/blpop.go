@@ -3,7 +3,6 @@ package commands
 import (
 	"log"
 	"reflect"
-	"strconv"
 	"time"
 
 	"github.com/aayush0325/keyforge/internal/db"
@@ -12,34 +11,20 @@ import (
 )
 
 func blpop(args *resp.Array, conn *pubsub.Connection) {
-	if len(args.Val) < 3 {
-		msg := resp.SimpleError{Val: []byte("wrong number of arguments for 'blpop' command")}
-		conn.Write(&msg)
+	if !requireMinArgs(args, 3, "blpop", conn) {
 		return
 	}
 
-	// Last argument is timeout
-	timeoutString, ok := args.Val[len(args.Val)-1].(*resp.BulkString)
+	timeoutFloat, ok := parseFloatBulkArg(args, len(args.Val)-1, "blpop", conn)
 	if !ok {
-		msg := resp.SimpleError{Val: []byte("wrong data type for timeout argument of 'blpop' command")}
-		conn.Write(&msg)
-		return
-	}
-
-	timeoutFloat, err := strconv.ParseFloat(string(timeoutString.Str), 64)
-	if err != nil {
-		msg := resp.SimpleError{Val: []byte("error while parsing timeout argument of 'blpop' command")}
-		conn.Write(&msg)
 		return
 	}
 
 	// Collect all keys (everything except command name and timeout)
 	keys := make([]*resp.BulkString, 0, len(args.Val)-2)
 	for i := 1; i < len(args.Val)-1; i++ {
-		key, ok := args.Val[i].(*resp.BulkString)
+		key, ok := getBulkArgMsg(args, i, conn, "wrong data type for key argument of 'blpop' command")
 		if !ok {
-			msg := resp.SimpleError{Val: []byte("wrong data type for key argument of 'blpop' command")}
-			conn.Write(&msg)
 			return
 		}
 		keys = append(keys, key)

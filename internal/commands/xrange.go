@@ -7,31 +7,22 @@ import (
 )
 
 func xrange(args *resp.Array, conn *pubsub.Connection) {
-	// XRANGE key start end
-	if len(args.Val) < 4 {
-		msg := resp.SimpleError{Val: []byte("ERR wrong number of arguments for 'xrange' command")}
-		conn.Write(&msg)
+	if !requireMinArgs(args, 4, "xrange", conn) {
 		return
 	}
 
-	streamKey, ok := args.Val[1].(*resp.BulkString)
+	streamKey, ok := getBulkArg(args, 1, "xrange", conn)
 	if !ok {
-		msg := resp.SimpleError{Val: []byte("ERR invalid argument for 'xrange' command")}
-		conn.Write(&msg)
 		return
 	}
 
-	startIDStr, ok := args.Val[2].(*resp.BulkString)
+	startIDStr, ok := getBulkArg(args, 2, "xrange", conn)
 	if !ok {
-		msg := resp.SimpleError{Val: []byte("ERR invalid argument for 'xrange' command")}
-		conn.Write(&msg)
 		return
 	}
 
-	endIDStr, ok := args.Val[3].(*resp.BulkString)
+	endIDStr, ok := getBulkArg(args, 3, "xrange", conn)
 	if !ok {
-		msg := resp.SimpleError{Val: []byte("ERR invalid argument for 'xrange' command")}
-		conn.Write(&msg)
 		return
 	}
 

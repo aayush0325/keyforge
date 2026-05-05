@@ -6,20 +6,12 @@ import (
 )
 
 func unsubscribe(args *resp.Array, conn *pubsub.Connection) {
-	if len(args.Val) != 2 {
-		msg := resp.SimpleError{
-			Val: []byte("wrong number of arguments for 'unsubscribe' command"),
-		}
-		conn.Write(&msg)
+	if !requireExactArgs(args, 2, "unsubscribe", conn) {
 		return
 	}
 
-	channel, ok := args.Val[1].(*resp.BulkString)
+	channel, ok := getBulkArg(args, 1, "unsubscribe", conn)
 	if !ok {
-		msg := resp.SimpleError{
-			Val: []byte("wrong data type argument for 'unsubscribe' command"),
-		}
-		conn.Write(&msg)
 		return
 	}
 	delete(conn.Channels, string(channel.Str)) // unlink the channel from the connection struct

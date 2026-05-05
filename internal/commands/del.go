@@ -7,28 +7,15 @@ import (
 )
 
 func del(args *resp.Array, conn *pubsub.Connection) {
-	if len(args.Val) < 2 {
-		if conn != nil {
-			msg := resp.SimpleError{
-				Val: []byte("wrong number of arguments for 'del' command"),
-			}
-			conn.Write(&msg)
-		}
+	if !requireMinArgs(args, 2, "del", conn) {
 		return
 	}
 
 	deletedCount := int64(0)
 
-	// Handle multiple keys
 	for i := 1; i < len(args.Val); i++ {
-		key, ok := args.Val[i].(*resp.BulkString)
+		key, ok := getBulkArgMsg(args, i, conn, "wrong data type for argument of 'del' command")
 		if !ok {
-			if conn != nil {
-				msg := resp.SimpleError{
-					Val: []byte("wrong data type for argument of 'del' command"),
-				}
-				conn.Write(&msg)
-			}
 			return
 		}
 

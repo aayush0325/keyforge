@@ -7,11 +7,7 @@ import (
 )
 
 func exists(args *resp.Array, conn *pubsub.Connection) {
-	if len(args.Val) < 2 {
-		msg := resp.SimpleError{
-			Val: []byte("wrong number of arguments for 'exists' command"),
-		}
-		conn.Write(&msg)
+	if !requireMinArgs(args, 2, "exists", conn) {
 		return
 	}
 
@@ -19,12 +15,8 @@ func exists(args *resp.Array, conn *pubsub.Connection) {
 
 	// Handle multiple keys
 	for i := 1; i < len(args.Val); i++ {
-		key, ok := args.Val[i].(*resp.BulkString)
+		key, ok := getBulkArgMsg(args, i, conn, "wrong data type for argument of 'exists' command")
 		if !ok {
-			msg := resp.SimpleError{
-				Val: []byte("wrong data type for argument of 'exists' command"),
-			}
-			conn.Write(&msg)
 			return
 		}
 

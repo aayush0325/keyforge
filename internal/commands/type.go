@@ -8,20 +8,12 @@ import (
 )
 
 func typeCommand(args *resp.Array, conn *pubsub.Connection) {
-	if len(args.Val) != 2 {
-		msg := resp.SimpleError{
-			Val: []byte("wrong number of arguments for 'type' command"),
-		}
-		conn.Write(&msg)
+	if !requireExactArgs(args, 2, "type", conn) {
 		return
 	}
 
-	key, ok := args.Val[1].(*resp.BulkString)
+	key, ok := getBulkArg(args, 1, "type", conn)
 	if !ok {
-		msg := resp.SimpleError{
-			Val: []byte("wrong data type for the 2nd argument of 'type' command"),
-		}
-		conn.Write(&msg)
 		return
 	}
 

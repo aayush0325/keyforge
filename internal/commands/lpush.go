@@ -9,10 +9,12 @@ import (
 )
 
 func lpush(args *resp.Array, conn *pubsub.Connection) {
-	key, ok := args.Val[1].(*resp.BulkString)
+	if !requireMinArgs(args, 2, "lpush", conn) {
+		return
+	}
+
+	key, ok := getBulkArg(args, 1, "lpush", conn)
 	if !ok {
-		msg := resp.SimpleError{Val: []byte("wrong data type of 1st argument for 'lpush' command")}
-		conn.Write(&msg)
 		return
 	}
 
@@ -22,10 +24,8 @@ func lpush(args *resp.Array, conn *pubsub.Connection) {
 	log.Printf("Lock for list %s acquired by the 'lpush' command goroutine", key.Str)
 
 	for i := 2; i < len(args.Val); i++ {
-		val, ok := args.Val[i].(*resp.BulkString)
+		val, ok := getBulkArgMsg(args, i, conn, "wrong data type of list entry in 'lpush' command")
 		if !ok {
-			msg := resp.SimpleError{Val: []byte("wrong data type of list entry in 'lpush' command")}
-			conn.Write(&msg)
 			return
 		}
 		list.Q.PushFront(string(val.Str))

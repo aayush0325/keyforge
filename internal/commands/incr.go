@@ -7,13 +7,12 @@ import (
 )
 
 func incr(args *resp.Array, conn *pubsub.Connection) {
-	key, ok := args.Val[1].(*resp.BulkString)
+	if !requireExactArgs(args, 2, "incr", conn) {
+		return
+	}
+
+	key, ok := getBulkArg(args, 1, "incr", conn)
 	if !ok {
-		if conn != nil {
-			msg := resp.SimpleError{
-				Val: []byte("wrong data type of list entry in 'incr' command")}
-			conn.Write(&msg)
-		}
 		return
 	}
 

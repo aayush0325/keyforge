@@ -15,10 +15,8 @@ func hello(args *resp.Array, conn *pubsub.Connection) {
 		return
 	}
 
-	version, ok := args.Val[1].(*resp.BulkString)
+	version, ok := getBulkArgMsg(args, 1, conn, "ERR Protocol version is not an integer or out of range")
 	if !ok {
-		msg := resp.SimpleError{Val: []byte("ERR Protocol version is not an integer or out of range")}
-		conn.Write(&msg)
 		return
 	}
 

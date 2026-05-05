@@ -6,20 +6,12 @@ import (
 )
 
 func echo(args *resp.Array, conn *pubsub.Connection) {
-	if len(args.Val) != 2 {
-		msg := resp.SimpleError{
-			Val: []byte("wrong number of arguments for 'echo' command"),
-		}
-		conn.Write(&msg)
+	if !requireExactArgs(args, 2, "echo", conn) {
 		return
 	}
 
-	str, ok := args.Val[1].(*resp.BulkString)
+	str, ok := getBulkArg(args, 1, "echo", conn)
 	if !ok {
-		msg := resp.SimpleError{
-			Val: []byte("wrong data type argument for 'echo' command"),
-		}
-		conn.Write(&msg)
 		return
 	}
 

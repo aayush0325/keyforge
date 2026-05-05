@@ -2,7 +2,6 @@ package commands
 
 import (
 	"log"
-	"strconv"
 
 	"github.com/aayush0325/keyforge/internal/db"
 	"github.com/aayush0325/keyforge/internal/pubsub"
@@ -10,34 +9,24 @@ import (
 )
 
 func lpop(args *resp.Array, conn *pubsub.Connection) {
-	if len(args.Val) != 3 && len(args.Val) != 2 {
+	if len(args.Val) < 2 || len(args.Val) > 3 {
 		msg := resp.SimpleError{Val: []byte("wrong number of arguments for 'lpop' command")}
 		conn.Write(&msg)
 		return
 	}
 
-	key, ok := args.Val[1].(*resp.BulkString)
+	key, ok := getBulkArg(args, 1, "lpop", conn)
 	if !ok {
-		msg := resp.SimpleError{Val: []byte("wrong data type of 1st argument for 'lpop' command")}
-		conn.Write(&msg)
 		return
 	}
 	num := int64(1)
 
 	if len(args.Val) == 3 {
-		numberString, ok := args.Val[2].(*resp.BulkString)
+		var ok bool
+		num, ok = parseIntBulkArg(args, 2, "lpop", conn)
 		if !ok {
-			msg := resp.SimpleError{Val: []byte("wrong data type of 3rd argument for 'lpop' command")}
-			conn.Write(&msg)
 			return
 		}
-		number, err := strconv.ParseInt(string(numberString.Str), 10, 64)
-		if err != nil {
-			msg := resp.SimpleError{Val: []byte("error while parsing the 3rd argument of 'lpop' command")}
-			conn.Write(&msg)
-			return
-		}
-		num = number
 	}
 
 	list := db.GetList(string(key.Str))
