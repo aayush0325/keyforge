@@ -34,8 +34,11 @@ type Command struct {
 	ttl   int64       // ttl as a 64 bit signed integer, (negative ttl = infinite)
 	c     chan []byte // channel where we expect the goroutine to push the
 	// return value
-	operation MapCommands // type of command being pushed
-	nx        bool        // NX flag: only set if key does not exist
+	operation MapCommands             // type of command being pushed
+	nx        bool                    // NX flag: only set if key does not exist
+	expiry    time.Time               // absolute expiry, used by SETENTRY (RDB load path)
+	snapCh    chan<- map[string]Entry // receives a copy of the shard, used by SNAPSHOT
+	doneCh    chan<- struct{}         // signalled once the command was applied
 }
 
 type MapCommands int
@@ -49,6 +52,9 @@ const (
 	DEL
 	EXISTS
 	INCR
+	SETENTRY // store a raw entry with an absolute expiry (RDB load)
+	SNAPSHOT // hand out a copy of the shard (RDB dump / FULLRESYNC)
+	FLUSH    // drop every entry of the shard
 )
 
 var (
@@ -94,6 +100,12 @@ func shardLoop(s *Shard) {
 			handleExistsCommand(s, cmd)
 		case INCR:
 			handleIncrCommand(s, cmd)
+		case SETENTRY:
+			handleSetEntryCommand(s, cmd)
+		case SNAPSHOT:
+			handleSnapshotCommand(s, cmd)
+		case FLUSH:
+			handleFlushCommand(s, cmd)
 		}
 	}
 }

@@ -24,10 +24,10 @@ func wait(args *resp.Array, conn *pubsub.Connection) {
 		return
 	}
 
-	log.Printf("offset: %d, lastconfirmed: %d, timeout: %d", conf.Offset, conf.LastConfirmedOffset, timeout)
+	log.Printf("offset: %d, lastconfirmed: %d, timeout: %d", conf.GetOffset(), conf.GetLastConfirmedOffset(), timeout)
 
 	// Fast path
-	if conf.Offset <= conf.LastConfirmedOffset {
+	if conf.GetOffset() <= conf.GetLastConfirmedOffset() {
 		pubsub.Instance.ReplicaMu.Lock()
 		count := len(pubsub.Instance.Replicas)
 		pubsub.Instance.ReplicaMu.Unlock()
@@ -56,29 +56,32 @@ func wait(args *resp.Array, conn *pubsub.Connection) {
 
 	for {
 		cnt := int64(0)
+		target := conf.GetOffset()
 
 		for _, replica := range replicas {
-			if uint64(replica.Offset) >= conf.Offset {
+			if uint64(replica.Offset) >= target {
 				cnt++
 			}
 		}
 
 		if cnt >= numreplica {
-			conf.LastConfirmedOffset = conf.Offset
+			conf.SetLastConfirmedOffset(target)
 			conn.Write(&resp.Integer{Val: cnt})
-			conf.Offset += uint64(len(getack.ToBytes()))
+			conf.AddOffset(uint64(len(getack.ToBytes())))
 
 			return
 		}
 
 		if time.Now().After(deadline) && timeout != 0 {
-			conf.LastConfirmedOffset = conf.Offset
+			conf.SetLastConfirmedOffset(conf.GetOffset())
 			conn.Write(&resp.Integer{Val: cnt})
-			conf.Offset += uint64(len(getack.ToBytes()))
+			conf.AddOffset(uint64(len(getack.ToBytes())))
 
 			return
 		}
 
+		// Avoid spinning the CPU while waiting for the replicas to catch up
+		time.Sleep(time.Millisecond)
 	}
 
 }

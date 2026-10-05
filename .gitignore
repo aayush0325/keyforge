@@ -23,6 +23,10 @@ keyforge
 bin/
 dist/
 
+# RDB dumps produced by the server
+*.rdb
+*.rdb.tmp
+
 # IDE and editor files
 .vscode/
 .idea/

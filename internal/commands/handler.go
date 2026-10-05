@@ -8,17 +8,24 @@ import (
 
 	conf "github.com/aayush0325/keyforge/internal/config"
 	"github.com/aayush0325/keyforge/internal/pubsub"
+	"github.com/aayush0325/keyforge/internal/rdb"
 	"github.com/aayush0325/keyforge/internal/resp"
 )
 
 // DebugMode enables logging of all commands when set to true
 var DebugMode bool
 
+// writeCommands are the commands that modify the dataset, they are the ones
+// streamed to the replicas after a full resynchronization.
 var writeCommands = map[string]struct{}{
 	"set":   {},
 	"setnx": {},
 	"del":   {},
 	"incr":  {},
+	"lpush": {},
+	"rpush": {},
+	"lpop":  {},
+	"xadd":  {},
 }
 
 func logCommand(arr *resp.Array) {
@@ -37,6 +44,24 @@ func logCommand(arr *resp.Array) {
 func isWriteCommand(cmd string) bool {
 	_, ok := writeCommands[cmd]
 	return ok
+}
+
+// hasWriteCommand reports whether any of the queued commands modifies the
+// dataset.
+func hasWriteCommand(cmds []*resp.Array) bool {
+	for _, cmd := range cmds {
+		if len(cmd.Val) == 0 {
+			continue
+		}
+		name, ok := cmd.Val[0].(*resp.BulkString)
+		if !ok {
+			continue
+		}
+		if isWriteCommand(string(bytes.ToLower(name.Str))) {
+			return true
+		}
+	}
+	return false
 }
 
 var allowedInSubscribedMode = map[string]struct{}{
@@ -80,6 +105,21 @@ func ExecuteCommands(msg resp.Message, conn *pubsub.Connection) {
 		conn.Write(&resp.SimpleString{Val: []byte("QUEUED")})
 		conn.TransactionCommands = append(conn.TransactionCommands, arr)
 		return
+	}
+
+	// Write commands are executed while holding the dataset lock and hold it
+	// until they were propagated to the replicas. A dump (SAVE, BGSAVE or the
+	// FULLRESYNC of a new replica) therefore either sees the write or receives
+	// it on the replication stream, never both. Replicas never take the lock:
+	// they apply whatever the master sends them.
+	//
+	// Commands of a transaction are covered by the lock exec() takes around the
+	// whole transaction, taking it again here would deadlock.
+	writeCmd := isWriteCommand(cmdLower) && !conf.IsReplica
+	locked := false
+	if writeCmd && !conn.IsTransactionRunning {
+		rdb.LockDataset()
+		locked = true
 	}
 
 	switch cmdLower {
@@ -147,18 +187,31 @@ func ExecuteCommands(msg resp.Message, conn *pubsub.Connection) {
 		psync(arr, conn)
 	case "wait":
 		wait(arr, conn)
+	case "save":
+		saveCommand(arr, conn)
+	case "bgsave":
+		bgsave(arr, conn)
+	case "lastsave":
+		lastsaveCommand(arr, conn)
+	case "debug":
+		debug(arr, conn)
 	default:
 		commandDoesntExist(arr, conn)
 	}
 
 	if conf.IsReplica && conn.IsMaster {
-		conf.Offset += uint64(len(arr.ToBytes()))
+		// Everything the master streams to us moves our offset forward
+		conf.AddOffset(uint64(len(arr.ToBytes())))
 	}
 
-	if isWriteCommand(cmdLower) && !conf.IsReplica {
+	if writeCmd {
 		pubsub.Instance.PropagateToReplicas(arr.ToBytes())
-		conf.Offset += uint64(len(arr.ToBytes()))
+		conf.AddOffset(uint64(len(arr.ToBytes())))
 	}
 
-	log.Printf("offset: %d", conf.Offset)
+	if locked {
+		rdb.UnlockDataset()
+	}
+
+	log.Printf("offset: %d", conf.GetOffset())
 }
